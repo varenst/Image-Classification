@@ -5,8 +5,8 @@
 ## Installation
 
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-nam
+git clone git@github.com:varenst/Image-Classification.git
+cd Image-Classification
 
 pip install -r requirements.txt
 ```
