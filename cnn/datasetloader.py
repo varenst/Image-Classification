@@ -1,40 +1,34 @@
-
 import torch
 import torchvision
 import torchvision.transforms as transforms
+from torchvision.datasets import ImageFolder
+from torch.utils.data import DataLoader
+import os
 
-def load_data():
-    transform = transforms.Compose(
-        [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
-    )
+import torch
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader, random_split
+
+def load_data(data_dir="./data"):
+    transform = transforms.Compose([
+        transforms.Resize((128, 128)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))
+    ])
 
     batch_size = 4
 
-    trainset = torchvision.datasets.CIFAR10(
-        root="./data", train=True, download=True, transform=transform
-    )
-    trainloader = torch.utils.data.DataLoader(
-        trainset, batch_size=batch_size, shuffle=True, num_workers=2
-    )
+    full_dataset = datasets.ImageFolder(root=data_dir, transform=transform)
 
-    testset = torchvision.datasets.CIFAR10(
-        root="./data", train=False, download=True, transform=transform
-    )
-    testloader = torch.utils.data.DataLoader(
-        testset, batch_size=batch_size, shuffle=False, num_workers=2
-    )
+    total_size = len(full_dataset)
+    train_size = int(0.8 * total_size)
+    val_size = total_size - train_size
 
-    classes = (
-        "plane",
-        "car",
-        "bird",
-        "cat",
-        "deer",
-        "dog",
-        "frog",
-        "horse",
-        "ship",
-        "truck",
-    )
+    trainset, valset = random_split(full_dataset, [train_size, val_size])
 
-    return trainloader, testloader, classes
+    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
+    valloader = DataLoader(valset, batch_size=batch_size, shuffle=False, num_workers=2)
+
+    classes = full_dataset.classes
+
+    return trainloader, valloader, classes

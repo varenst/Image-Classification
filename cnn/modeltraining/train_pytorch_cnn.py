@@ -20,7 +20,7 @@ def imshow(img):
 net = cnn_setup.Net()
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+optimizer = optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
 
 def train():
     trainloader, testloader, classes = load_data()
@@ -28,7 +28,7 @@ def train():
     dataiter = iter(trainloader)
     images, labels = next(dataiter)
 
-    for epoch in range(2):
+    for epoch in range(100):
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
             inputs, labels = data
