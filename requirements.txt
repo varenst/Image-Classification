@@ -1,0 +1,9 @@
+plaintext
+torch
+torchvision
+matplotlib
+numpy
+scikit-learn
+seaborn
+opencv-python
+pandas

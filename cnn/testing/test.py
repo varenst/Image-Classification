@@ -1,61 +1,60 @@
-import torch.nn as nn
-import torch.nn.functional as F
 import torch
-import torchvision
-import torchvision.transforms as transforms
+import torch.nn as nn
 import matplotlib.pyplot as plt
-import numpy as np
+import itertools
+from sklearn.metrics import confusion_matrix, classification_report
 from cnn.cnn_setup import Net
 from cnn.datasetloader import load_data
 
-PATH = './cat_dog_model.pth'
+def plot_confusion_matrix(cm, classes):
+    plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+    plt.title('Confusion Matrix')
+    plt.colorbar()
+    tick_marks = range(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, f"{cm[i, j]}", horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.tight_layout()
 
 def test():
-    trainloader, testloader, classes = load_data("./traindata")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    _, test_loader, classes = load_data(
+        train_dir="./data",
+        test_dir="./testdata"
+    )
 
-    dataiter = iter(trainloader)
-    images, labels = next(dataiter)
-
-    net = Net()
-    net.load_state_dict(torch.load(PATH, weights_only=True))
-
-    outputs = net(images)
-
-    _, predicted = torch.max(outputs, 1)
+    net = Net().to(device)
+    net.load_state_dict(torch.load("catdog_cnn.pth"))
+    net.eval()
 
     correct = 0
     total = 0
+    all_preds = []
+    all_labels = []
 
     with torch.no_grad():
-        for data in testloader:
-            images, labels = data
-            outputs = net(images)
-            _, predicted = torch.max(outputs, 1)
+        for inputs, labels in test_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            outputs = net(inputs)
+            _, predicted = outputs.max(1)
             total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+            correct += predicted.eq(labels).sum().item()
+            all_preds.extend(predicted.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
 
-    print(
-        f"Accuracy of the network on the 40 test images: {100 * correct // total} %"
-    )
+    test_acc = 100 * correct / total
+    print(f"Test Accuracy: {test_acc:.2f}%")
 
-    correct_pred = {classname: 0 for classname in classes}
-    total_pred = {classname: 0 for classname in classes}
+    cm = confusion_matrix(all_labels, all_preds)
+    print(classification_report(all_labels, all_preds, target_names=classes))
+    plot_confusion_matrix(cm, classes)
+    plt.show()
 
-    with torch.no_grad():
-        for data in testloader:
-            images, labels = data
-            outputs = net(images)
-            _, predictions = torch.max(outputs, 1)
-
-            for label, prediction in zip(labels, predictions):
-                if label == prediction:
-                    correct_pred[classes[label]] += 1
-                total_pred[classes[label]] += 1
-
-    for classname, correct_count in correct_pred.items():
-        if total_pred[classname] == 0:
-            accuracy = 0.0
-        else:
-            accuracy = 100 * float(correct_count) / total_pred[classname]
-        print(f"Accuracy for class: {classname:5s} is {accuracy:.1f} %")
-
+if __name__ == "__main__":
+    test()
