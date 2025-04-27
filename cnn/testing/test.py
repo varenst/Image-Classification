@@ -21,6 +21,46 @@ def plot_confusion_matrix(cm, classes):
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.tight_layout()
+    plt.show()
+
+def show_misclassified(test_loader, model, classes, max_images=10, device='cpu', save_path=None):
+    model.eval()
+    misclassified = []
+    true_labels = []
+    pred_labels = []
+
+    with torch.no_grad():
+        for inputs, labels in test_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            outputs = model(inputs)
+            _, preds = outputs.max(1)
+            for i in range(len(labels)):
+                if preds[i] != labels[i]:
+                    misclassified.append(inputs[i].cpu())
+                    true_labels.append(labels[i].cpu().item())
+                    pred_labels.append(preds[i].cpu().item())
+
+    total_misclassified = len(misclassified)
+    num_images = min(max_images, total_misclassified)
+
+    if num_images == 0:
+        print("No misclassified images found.")
+        return
+
+    grid_size = int(num_images ** 0.5) + 1
+
+    plt.figure(figsize=(15, 15))
+    for idx in range(num_images):
+        img = misclassified[idx] * 0.5 + 0.5  # Unnormalize
+        img = img.permute(1, 2, 0).numpy()
+
+        plt.subplot(grid_size, grid_size, idx + 1)
+        plt.imshow(img)
+        plt.title(f"True: {classes[true_labels[idx]]}\nPred: {classes[pred_labels[idx]]}", color="red")
+        plt.axis('off')
+
+    plt.tight_layout()
+    plt.show()
 
 def test():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -54,7 +94,7 @@ def test():
     cm = confusion_matrix(all_labels, all_preds)
     print(classification_report(all_labels, all_preds, target_names=classes))
     plot_confusion_matrix(cm, classes)
-    plt.show()
+    show_misclassified(test_loader, net, classes, max_images=10, device=device)
 
 if __name__ == "__main__":
     test()
