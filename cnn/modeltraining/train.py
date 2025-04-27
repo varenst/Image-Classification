@@ -29,7 +29,7 @@ def plot_training(train_losses, train_accuracies):
     plt.show()
 
 def train():
-    # doing this incase you want to test if I wrote this correctly
+    # doing this incase you want to test, if my code works correctly
     # I ran this on my cpu so it was slower but still worked
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_loader, _, _ = load_data(
